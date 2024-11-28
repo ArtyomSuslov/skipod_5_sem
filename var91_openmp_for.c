@@ -34,6 +34,8 @@ int main(int an, char **as)
 	
 	for (threads_iter=0; threads_iter<18; threads_iter++) 
 	{
+		omp_set_num_threads(threads[threads_iter]);
+
 		double timer_start = omp_get_wtime();
 
 		init(A);
