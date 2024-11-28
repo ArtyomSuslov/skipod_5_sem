@@ -7,8 +7,8 @@
 #define  Max(a,b) ((a)>(b)?(a):(b))
 
 //#define  N   (2*2*2*2*2*2+2)       // 66
-//#define  N   (2*2*2*2*2*2*2+2)     // 130
-#define  N   (2*2*2*2*2*2*2*2+2)   // 258
+#define  N   (2*2*2*2*2*2*2+2)     // 130
+//#define  N   (2*2*2*2*2*2*2*2+2)   // 258
 //#define  N   (2*2*2*2*2*2*2*2*2+2) // 514
 
 double   maxeps = 0.1e-7;
@@ -44,7 +44,7 @@ int main(int an, char **as)
 			eps = 0.;
 			relax(A, B);
 			resid(A, B);
-			printf( "it=%4i   eps=%f\n", it,eps);
+			//printf( "it=%4i   eps=%f\n", it,eps);
 			if (eps < maxeps) break;
 		}
 
