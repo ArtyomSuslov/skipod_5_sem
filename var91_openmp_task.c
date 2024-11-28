@@ -124,7 +124,7 @@ void resid(double A[N][N][N], double B[N][N][N])
         {
             double e = fabs(A[i][j][k] - B[i][j][k]);
             A[i][j][k] = B[i][j][k];
-			local_eps[i*j] = Max(local_eps[i*j], e)
+			local_eps[i*j] = Max(local_eps[i*j], e);
         }
     }
     #pragma omp taskwait
