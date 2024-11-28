@@ -124,13 +124,13 @@ void resid(double A[N][N][N], double B[N][N][N])
         {
             double e = fabs(A[i][j][k] - B[i][j][k]);
             A[i][j][k] = B[i][j][k];
-			local_esp[i*j] = Max(local_esp[i*j], e)
+			local_eps[i*j] = Max(local_eps[i*j], e)
         }
     }
     #pragma omp taskwait
     
 	for (i=0; i<(N-2)*(N-2); i++)
-        eps = Max(eps, local_esp[i]);
+        eps = Max(eps, local_eps[i]);
 }
 
 void verify(double A[N][N][N])
