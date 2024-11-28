@@ -1,14 +1,10 @@
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <time.h>
-
+#include <omp.h>
 #define  Max(a,b) ((a)>(b)?(a):(b))
 
-#define  N   (2*2*2*2*2*2+2)       // 66
-// #define  N   (2*2*2*2*2*2*2+2)     // 130
-// #define  N   (2*2*2*2*2*2*2*2+2)   // 258
-// #define  N   (2*2*2*2*2*2*2*2*2+2) // 514
+#define  N   (2*2*2*2*2*2+2)
 double   maxeps = 0.1e-7;
 int itmax = 100;
 int i,j,k;
@@ -23,10 +19,6 @@ void verify();
 int main(int an, char **as)
 {
 	int it;
-
-	// starting timer
-	clock_t timer_start = clock();
-
 	init();
 	for(it=1; it<=itmax; it++)
 	{
@@ -36,16 +28,7 @@ int main(int an, char **as)
 		printf( "it=%4i   eps=%f\n", it,eps);
 		if (eps < maxeps) break;
 	}
-
-	// stopping timer after relax() + resid()
-	clock_t timer_end = clock();
-	double time_spent = (double)(timer_end - timer_start) / CLOCKS_PER_SEC;
-
 	verify();
-
-	// printing the calculated time
-	printf("relax() + resid() were running for {%f} seconds with N = {%d}\n", time_spent, N);
-
 	return 0;
 }
 

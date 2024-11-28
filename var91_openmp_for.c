@@ -1,6 +1,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <omp.h>
 #define  Max(a,b) ((a)>(b)?(a):(b))
 
 #define  N   (2*2*2*2*2*2+2)
