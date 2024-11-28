@@ -27,8 +27,7 @@ int main(int an, char **as)
 	int threads[18] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 40, 60, 80, 100, 120, 140, 160};
 	double threads_time[18];
 	int threads_iter;
-    double timer_start;
-    double timer_end;
+    double timer_start, timer_end;
 
 	double A[N][N][N], B[N][N][N];
 	
@@ -45,7 +44,7 @@ int main(int an, char **as)
 			eps = 0.;
 			relax(A, B);
 			resid(A, B);
-			// printf( "it=%4i   eps=%f\n", it,eps);
+			printf( "it=%4i   eps=%f\n", it,eps);
 			if (eps < maxeps) break;
 		}
 
