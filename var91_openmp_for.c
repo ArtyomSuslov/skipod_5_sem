@@ -6,10 +6,10 @@
 
 #define  Max(a,b) ((a)>(b)?(a):(b))
 
-#define  N   (2*2*2*2*2*2+2)       // 66
-// #define  N   (2*2*2*2*2*2*2+2)     // 130
-// #define  N   (2*2*2*2*2*2*2*2+2)   // 258
-// #define  N   (2*2*2*2*2*2*2*2*2+2) // 514
+//#define  N   (2*2*2*2*2*2+2)       // 66
+//#define  N   (2*2*2*2*2*2*2+2)     // 130
+//#define  N   (2*2*2*2*2*2*2*2+2)   // 258
+#define  N   (2*2*2*2*2*2*2*2*2+2) // 514
 
 double   maxeps = 0.1e-7;
 int itmax = 100;
@@ -57,6 +57,7 @@ void init(double A [N][N][N])
 {
 	int i,j,k;
 
+	#pragma omp parallel for default(none) shared(A) private(i, j, k)	
 	for(i=0; i<=N-1; i++)
 	for(j=0; j<=N-1; j++)
 	for(k=0; k<=N-1; k++)
@@ -84,6 +85,7 @@ void resid(double A [N][N][N], double B [N][N][N])
 {
 	int i,j,k;
 
+	#pragma omp parallel for default(none) shared(A, B) private(i, j, k) reduction(max: eps)
 	for(i=1; i<=N-2; i++)
 	for(j=1; j<=N-2; j++)
 	for(k=1; k<=N-2; k++)
