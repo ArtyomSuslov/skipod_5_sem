@@ -5,15 +5,17 @@
 
 #define  Max(a,b) ((a)>(b)?(a):(b))
 
-//#define  N   (2*2*2*2*2*2+2)       // 66
+#define  N   (2*2*2*2*2*2+2)       // 66
 //#define  N   (2*2*2*2*2*2*2+2)     // 130
-#define  N   (2*2*2*2*2*2*2*2+2)   // 258
+//#define  N   (2*2*2*2*2*2*2*2+2)   // 258
 //#define  N   (2*2*2*2*2*2*2*2*2+2) // 514
 
 double   maxeps = 0.1e-7;
 int itmax = 100;
 double eps;
-double *eps_threads;
+
+double local_eps[(N-2)*(N-2)];
+double local_s[N*N];
 
 void relax(double A[N][N][N], double B[N][N][N]);
 void resid(double A[N][N][N], double B[N][N][N]);
@@ -75,30 +77,35 @@ void init(double A[N][N][N])
 {
     int i, j, k;
 
+	#pragma omp parallel
+	#pragma omp single
     for(i=0; i<=N-1; i++)
     for(j=0; j<=N-1; j++)
+	#pragma omp task firstprivate(i, j) private(k) shared(A)
     for(k=0; k<=N-1; k++)
     {
         if(i==0 || i==N-1 || j==0 || j==N-1 || k==0 || k==N-1) A[i][j][k]= 0.;
         else A[i][j][k]= (4. + i + j + k);
     }
-    eps_threads = calloc(omp_get_max_threads(), sizeof(double));
 }
 
 void relax(double A[N][N][N], double B[N][N][N])
 {
     int i, j, k;
 
-    #pragma omp parallel default(none) shared(A, B) private(i, j)
-    #pragma omp master
+    #pragma omp parallel
+	#pragma omp single
     for(i=2; i<=N-3; i++)
-    for(j=2; j<=N-3; j++)
-    #pragma omp task default(none) private(k) firstprivate(i, j) shared(A, B)
-    for(k=2; k<=N-3; k++)
-    {
-        B[i][j][k] = (A[i-1][j][k] + A[i+1][j][k] + A[i][j-1][k] + A[i][j+1][k] + A[i][j][k-1] + A[i][j][k+1] +
-                      A[i-2][j][k] + A[i+2][j][k] + A[i][j-2][k] + A[i][j+2][k] + A[i][j][k-2] + A[i][j][k+2]) / 12.;
-    }
+    for(j=2; j<=N-3; j++) 
+	{
+		#pragma omp task firstprivate(i, j) private(k) shared(A, B)
+		for(k=2; k<=N-3; k++)
+		{
+			B[i][j][k] = (A[i-1][j][k] + A[i+1][j][k] + A[i][j-1][k] + A[i][j+1][k] + A[i][j][k-1] + A[i][j][k+1] +
+						A[i-2][j][k] + A[i+2][j][k] + A[i][j-2][k] + A[i][j+2][k] + A[i][j][k-2] + A[i][j][k+2]) / 12.;
+		}
+	}
+    
     #pragma omp taskwait
 }
 
@@ -106,29 +113,24 @@ void resid(double A[N][N][N], double B[N][N][N])
 {
     int i, j, k;
 
-    #pragma omp parallel default(none) shared(A, B, eps_threads) private(i, j)
-    #pragma omp master
+    #pragma omp parallel
+	#pragma omp single
     for(i=1; i<=N-2; i++)
-    for(j=1; j<=N-2; j++)
-    #pragma omp task default(none) private(k) firstprivate(i, j) shared(A, B, eps_threads)
-    {
-        double e_task[N-2];
-        int threadnum = omp_get_thread_num();
+    for(j=1; j<=N-2; j++) 
+	{
+		local_eps[i*j] = eps;
+		#pragma omp task firstprivate(i, j) private(k) shared(A, B, local_eps)
         for(k=1; k<=N-2; k++)
         {
-            e_task[k-1] = fabs(A[i][j][k] - B[i][j][k]);
+            double e = fabs(A[i][j][k] - B[i][j][k]);
             A[i][j][k] = B[i][j][k];
+			local_esp[i*j] = Max(local_esp[i*j], e)
         }
-        for(k=1; k<=N-2; k++)
-            eps_threads[threadnum] = Max(eps_threads[threadnum], e_task[k-1]);
     }
     #pragma omp taskwait
     
-	for (i=0; i<omp_get_max_threads(); i++)
-        eps = Max(eps, eps_threads[i]);
-    
-	//free(eps_threads);
-	memset(eps_threads, 0, omp_get_max_threads() * sizeof(double));
+	for (i=0; i<(N-2)*(N-2); i++)
+        eps = Max(eps, local_esp[i]);
 }
 
 void verify(double A[N][N][N])
@@ -136,11 +138,25 @@ void verify(double A[N][N][N])
     int i, j, k;
     double s;
     s = 0.;
+
+	for (i=0; i<N*N; i++)
+        local_s[i] = 0.;
+
+	#pragma omp parallel
+	#pragma omp single
     for(i=0; i<=N-1; i++)
     for(j=0; j<=N-1; j++)
-    for(k=0; k<=N-1; k++)
-    {
-        s = s + A[i][j][k] * (i+1) * (j+1) * (k+1) / (N*N*N);
-    }
+	{
+		#pragma omp task firstprivate(i, j) private(k) shared(A, local_s)
+		for(k=0; k<=N-1; k++)
+		{
+			local_s[i*j] = A[i][j][k] * (i+1) * (j+1) * (k+1) / (N*N*N);
+		}
+	}
+
+	for (i=0; i<N*N; i++)
+        s += local_s[i];
+
+
     printf("  S = %f\n", s);
 }
