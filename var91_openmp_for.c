@@ -59,6 +59,7 @@ int main(int an, char **as)
 	{
 		printf("For N = [%d] and [%d] threads: [%f] seconds\n", 
 		       N, threads[threads_iter], threads_time[threads_iter]);
+	}
 
 	return 0;
 }
