@@ -83,7 +83,7 @@ void relax(double A [N][N][N], double B [N][N][N])
 {
 	int i,j,k;
 
-	#pragma omp parallel for default(none) shared(A, B) private(i, j, k)
+	#pragma omp parallel for default(none) shared(A, B) private(i, j, k) collapse(3)
 	for(i=2; i<=N-3; i++)
 	for(j=2; j<=N-3; j++)
 	for(k=2; k<=N-3; k++)
