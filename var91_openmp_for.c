@@ -15,112 +15,110 @@ double   maxeps = 0.1e-7;
 int itmax = 100;
 double eps;
 
-void relax();
-void resid();
-void init();
-void verify(); 
+void relax(double A[N][N][N], double B[N][N][N]);
+void resid(double A[N][N][N], double B[N][N][N]);
+void init(double A[N][N][N]);
+void verify(double A[N][N][N]);
 
 int main(int an, char **as)
 {
-	int it;
-
-	int threads[18] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 40, 60, 80, 100, 120, 140, 160};
-	double threads_time[18];
-	int threads_iter;
+    int it;
+    int threads[18] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 40, 60, 80, 100, 120, 140, 160};
+    double threads_time[18];
+    int threads_iter;
     double timer_start, timer_end;
 
-	double A[N][N][N], B[N][N][N];
-	
-	for (threads_iter=0; threads_iter<18; threads_iter++) 
-	{
-		omp_set_num_threads(threads[threads_iter]);
+    double A[N][N][N], B[N][N][N];
 
-		double timer_start = omp_get_wtime();
+    for (threads_iter=0; threads_iter<18; threads_iter++)
+    {
+        omp_set_num_threads(threads[threads_iter]);
 
-		init(A);
+        timer_start = omp_get_wtime();
 
-		for(it=1; it<=itmax; it++)
-		{
-			eps = 0.;
-			relax(A, B);
-			resid(A, B);
-			//printf( "it=%4i   eps=%f\n", it,eps);
-			if (eps < maxeps) break;
-		}
+        init(A);
 
-		verify(A);
+        for(it=1; it<=itmax; it++)
+        {
+            eps = 0.;
+            relax(A, B);
+            resid(A, B);
+            if (eps < maxeps) break;
+        }
 
-		double timer_end = omp_get_wtime();
-		double time_spent = timer_end - timer_start;
+        verify(A);
 
-		threads_time[threads_iter] = time_spent;
-	}
+        timer_end = omp_get_wtime();
+        double time_spent = timer_end - timer_start;
 
-	for (threads_iter=0; threads_iter<18; threads_iter++) 
-	{
-		printf("For N = [%d] and [%d] threads: [%f] seconds\n", 
-		       N, threads[threads_iter], threads_time[threads_iter]);
-	}
+        threads_time[threads_iter] = time_spent;
+    }
 
-	return 0;
+    for (threads_iter=0; threads_iter<18; threads_iter++)
+    {
+        printf("For N = [%d] and [%d] threads: [%f] seconds\n",
+               N, threads[threads_iter], threads_time[threads_iter]);
+    }
+
+    return 0;
 }
 
-void init(double A [N][N][N])
+void init(double A[N][N][N])
 {
-	int i,j,k;
+    int i, j, k;
 
-	#pragma omp parallel for default(none) shared(A) private(i, j, k)
-	for(i=0; i<=N-1; i++)
-	for(j=0; j<=N-1; j++)
-	for(k=0; k<=N-1; k++)
-	{
-		if(i==0 || i==N-1 || j==0 || j==N-1 || k==0 || k==N-1) A[i][j][k]= 0.;
-		else A[i][j][k]= ( 4. + i + j + k) ;
-	}
-} 
-
-void relax(double A [N][N][N], double B [N][N][N])
-{
-	int i,j,k;
-
-	#pragma omp parallel for default(none) shared(A, B) private(i, j, k)
-	for(i=2; i<=N-3; i++)
-	for(j=2; j<=N-3; j++)
-	for(k=2; k<=N-3; k++)
-	{
-		B[i][j][k]=(A[i-1][j][k]+A[i+1][j][k]+A[i][j-1][k]+A[i][j+1][k]+A[i][j][k-1]+A[i][j][k+1]+
-			A[i-2][j][k]+A[i+2][j][k]+A[i][j-2][k]+A[i][j+2][k]+A[i][j][k-2]+A[i][j][k+2])/12.;
-	}
+    #pragma omp parallel for collapse(3) default(none) shared(A) private(i, j, k)
+    for(i=0; i<=N-1; i++)
+    for(j=0; j<=N-1; j++)
+    for(k=0; k<=N-1; k++)
+    {
+        if(i==0 || i==N-1 || j==0 || j==N-1 || k==0 || k==N-1) A[i][j][k]= 0.;
+        else A[i][j][k]= (4. + i + j + k);
+    }
 }
 
-void resid(double A [N][N][N], double B [N][N][N])
+void relax(double A[N][N][N], double B[N][N][N])
 {
-	int i,j,k;
+    int i, j, k;
 
-	#pragma omp parallel for default(none) shared(A, B) private(i, j, k) reduction(max: eps)
-	for(i=1; i<=N-2; i++)
-	for(j=1; j<=N-2; j++)
-	for(k=1; k<=N-2; k++)
-	{
-		double e;
-		e = fabs(A[i][j][k] - B[i][j][k]);         
-		A[i][j][k] = B[i][j][k]; 
-		eps = Max(eps,e);
-	}
+    #pragma omp parallel for collapse(3) default(none) shared(A, B) private(i, j, k)
+    for(i=2; i<=N-3; i++)
+    for(j=2; j<=N-3; j++)
+    for(k=2; k<=N-3; k++)
+    {
+        B[i][j][k] = (A[i-1][j][k] + A[i+1][j][k] + A[i][j-1][k] + A[i][j+1][k] + A[i][j][k-1] + A[i][j][k+1] +
+                      A[i-2][j][k] + A[i+2][j][k] + A[i][j-2][k] + A[i][j+2][k] + A[i][j][k-2] + A[i][j][k+2]) / 12.;
+    }
 }
 
-void verify(double A [N][N][N])
+void resid(double A[N][N][N], double B[N][N][N])
 {
-	int i,j,k;
+    int i, j, k;
 
-	double s;
-	s=0.;
-	#pragma omp parallel for default(none) shared(A) private(i, j, k) reduction(+:s) 
-	for(i=0; i<=N-1; i++)
-	for(j=0; j<=N-1; j++)
-	for(k=0; k<=N-1; k++)
-	{
-		s=s+A[i][j][k]*(i+1)*(j+1)*(k+1)/(N*N*N);
-	}
-	printf("  S = %f\n",s);
+    #pragma omp parallel for collapse(3) default(none) shared(A, B) private(i, j, k) reduction(max:eps)
+    for(i=1; i<=N-2; i++)
+    for(j=1; j<=N-2; j++)
+    for(k=1; k<=N-2; k++)
+    {
+        double e;
+        e = fabs(A[i][j][k] - B[i][j][k]);
+        A[i][j][k] = B[i][j][k];
+        eps = Max(eps, e);
+    }
+}
+
+void verify(double A[N][N][N])
+{
+    int i, j, k;
+    double s;
+    s = 0.;
+
+    #pragma omp parallel for collapse(3) default(none) shared(A) private(i, j, k) reduction(+:s)
+    for(i=0; i<=N-1; i++)
+    for(j=0; j<=N-1; j++)
+    for(k=0; k<=N-1; k++)
+    {
+        s = s + A[i][j][k] * (i+1) * (j+1) * (k+1) / (N*N*N);
+    }
+    printf("  S = %f\n", s);
 }
