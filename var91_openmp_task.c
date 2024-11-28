@@ -22,39 +22,6 @@ void verify(double A[N][N][N]);
 
 int main(int an, char **as)
 {
-    int it;
-    double start, end;
-    double A[N][N][N], B[N][N][N];
-
-    init(A);
-
-    start = omp_get_wtime();
-
-    #pragma omp parallel shared(A, B, maxeps, eps)
-    {
-        #pragma omp single
-        {
-            for(it=1; it<=itmax; it++)
-            {
-                eps = 0.;
-                relax(A, B);
-                resid(A, B);
-                printf("it=%4i   eps=%f\n", it, eps);
-                if (eps < maxeps) break;
-            }
-        }
-    }
-
-    verify(A);
-
-    end = omp_get_wtime();
-    printf("relax() + resid() were running for {%f} seconds with N = {%d}\n", end - start, N);
-
-    return 0;
-}
-
-int main(int an, char **as)
-{
 	int it;
 
 	int threads[18] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 40, 60, 80, 100, 120, 140, 160};
@@ -72,7 +39,7 @@ int main(int an, char **as)
 
 		init(A);
 
-		#pragma omp parallel shared(A, B, eps)
+		#pragma omp parallel shared(A, B, maxeps, eps)
     	{
 			#pragma omp single
         	{
