@@ -30,7 +30,7 @@ int main(int an, char **as)
 	init(A);
 
 	// starting timer
-	clock_t timer_start = clock();
+	double timer_start = omp_get_wtime();
 
 	for(it=1; it<=itmax; it++)
 	{
@@ -42,8 +42,8 @@ int main(int an, char **as)
 	}
 
 	// stopping timer after relax() + resid()
-	clock_t timer_end = clock();
-	double time_spent = (double)(timer_end - timer_start) / CLOCKS_PER_SEC;
+	double timer_end = omp_get_wtime();
+	double time_spent = timer_end - timer_start;
 
 	verify(A);
 
