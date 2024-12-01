@@ -114,9 +114,11 @@ void resid(double A [N][N][N], double B [N][N][N])
 	{
 		double e;
 		e = fabs(A[i][j][k] - B[i][j][k]);         
-		A[i][j][k] = B[i][j][k]; 
-		#pragma omp atomic
-		eps = Max(eps,e);
+		A[i][j][k] = B[i][j][k];
+		if (e > esp) {
+			#pragma omp atomic
+			eps = e;
+		}
 	}
 }
 
@@ -124,19 +126,18 @@ void verify(double A [N][N][N])
 {
 	int i,j,k;
 
-	double s, tmp;
+	double s;
 	s=0.;
-
+	
 	int TS = (N - 4) / omp_get_max_threads();
 
 	#pragma omp taskloop grainsize(TS)
 	for(i=0; i<=N-1; i++)
 	for(j=0; j<=N-1; j++)
 	for(k=0; k<=N-1; k++)
-	{	
-		tmp = A[i][j][k]*(i+1)*(j+1)*(k+1)/(N*N*N);
+	{
 		#pragma omp atomic
-		s=s+tmp;
+		s=s+A[i][j][k]*(i+1)*(j+1)*(k+1)/(N*N*N);
 	}
 	printf("  S = %f\n",s);
 }
