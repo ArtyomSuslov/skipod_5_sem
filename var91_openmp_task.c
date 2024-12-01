@@ -124,18 +124,19 @@ void verify(double A [N][N][N])
 {
 	int i,j,k;
 
-	double s;
+	double s, tmp;
 	s=0.;
-	
+
 	int TS = (N - 4) / omp_get_max_threads();
 
 	#pragma omp taskloop grainsize(TS)
 	for(i=0; i<=N-1; i++)
 	for(j=0; j<=N-1; j++)
 	for(k=0; k<=N-1; k++)
-	{
+	{	
+		tmp = A[i][j][k]*(i+1)*(j+1)*(k+1)/(N*N*N);
 		#pragma omp atomic
-		s=s+A[i][j][k]*(i+1)*(j+1)*(k+1)/(N*N*N);
+		s=s+tmp;
 	}
 	printf("  S = %f\n",s);
 }
