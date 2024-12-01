@@ -1,2 +1,17 @@
 *.[eE][xX][eE]
 *.sh
+./openmp
+./mpi
+./compile_all.sh
+./original
+./.git/hooks/pre-commit.sample
+./.git/hooks/update.sample
+./.git/hooks/applypatch-msg.sample
+./.git/hooks/pre-applypatch.sample
+./.git/hooks/pre-rebase.sample
+./.git/hooks/prepare-commit-msg.sample
+./.git/hooks/commit-msg.sample
+./.git/hooks/post-update.sample
+*.out
+*.err
+*.res
