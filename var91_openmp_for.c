@@ -59,7 +59,7 @@ int main(int an, char **as)
 	for (threads_iter=0; threads_iter<18; threads_iter++) 
 	{
 		printf("For N = [%d] and [%d] threads: [%f] seconds\n", 
-		       N, threads[threads_iter], threads_time[threads_iter]);
+		       N, omp_get_max_threads(), threads_time[threads_iter]);
 	}
 
 	return 0;
@@ -83,7 +83,7 @@ void relax(double A [N][N][N], double B [N][N][N])
 {
 	int i,j,k;
 
-	#pragma omp parallel for default(none) shared(A, B) private(i, j, k) collapse(3)
+	#pragma omp parallel for default(none) shared(A, B) private(i, j, k)
 	for(i=2; i<=N-3; i++)
 	for(j=2; j<=N-3; j++)
 	for(k=2; k<=N-3; k++)
