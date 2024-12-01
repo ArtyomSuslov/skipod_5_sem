@@ -59,7 +59,7 @@ int main(int an, char **as)
 	for (threads_iter=0; threads_iter<18; threads_iter++) 
 	{
 		printf("For N = [%d] and [%d] threads: [%f] seconds\n", 
-		       N, omp_get_max_threads(), threads_time[threads_iter]);
+		       N, threads[threads_iter], threads_time[threads_iter]);
 	}
 
 	return 0;
@@ -69,7 +69,7 @@ void init(double A [N][N][N])
 {
 	int i,j,k;
 
-	#pragma omp parallel for default(none) shared(A) private(i, j, k) collapse(3)
+	#pragma omp parallel for default(none) shared(A) private(i, j, k)
 	for(i=0; i<=N-1; i++)
 	for(j=0; j<=N-1; j++)
 	for(k=0; k<=N-1; k++)
@@ -97,7 +97,7 @@ void resid(double A [N][N][N], double B [N][N][N])
 {
 	int i,j,k;
 
-	#pragma omp parallel for default(none) shared(A, B) private(i, j, k) collapse(3) reduction(max: eps)
+	#pragma omp parallel for default(none) shared(A, B) private(i, j, k) reduction(max: eps)
 	for(i=1; i<=N-2; i++)
 	for(j=1; j<=N-2; j++)
 	for(k=1; k<=N-2; k++)
@@ -115,7 +115,7 @@ void verify(double A [N][N][N])
 
 	double s;
 	s=0.;
-	#pragma omp parallel for default(none) shared(A) private(i, j, k) collapse(3) reduction(+:s) 
+	#pragma omp parallel for default(none) shared(A) private(i, j, k) reduction(+:s) 
 	for(i=0; i<=N-1; i++)
 	for(j=0; j<=N-1; j++)
 	for(k=0; k<=N-1; k++)
