@@ -115,7 +115,7 @@ void resid(double A [N][N][N], double B [N][N][N])
 		double e;
 		e = fabs(A[i][j][k] - B[i][j][k]);         
 		A[i][j][k] = B[i][j][k];
-		if (e > esp) {
+		if (e > eps) {
 			#pragma omp atomic
 			eps = e;
 		}
