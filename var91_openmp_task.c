@@ -38,16 +38,13 @@ int main(int an, char **as)
 		double timer_start = omp_get_wtime();
 
 		init(A);
-		#pragma omp parallel shared(A, B, maxeps, eps)
+		for(it=1; it<=itmax; it++)
 		{
-			for(it=1; it<=itmax; it++)
-			{
-				eps = 0.;
-				relax(A, B);
-				resid(A, B);
-				//printf( "it=%4i   eps=%f\n", it,eps);
-				if (eps < maxeps) break;
-			}
+			eps = 0.;
+			relax(A, B);
+			resid(A, B);
+			//printf( "it=%4i   eps=%f\n", it,eps);
+			if (eps < maxeps) break;
 		}
 		verify(A);
 

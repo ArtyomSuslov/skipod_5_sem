@@ -69,7 +69,7 @@ void init(double A [N][N][N])
 {
 	int i,j,k;
 
-	#pragma omp parallel for default(none) shared(A) private(i, j, k)
+	#pragma omp parallel for collapse(2) default(none) shared(A) private(i, j, k)
 	for(i=0; i<=N-1; i++)
 	for(j=0; j<=N-1; j++)
 	for(k=0; k<=N-1; k++)
@@ -83,7 +83,7 @@ void relax(double A [N][N][N], double B [N][N][N])
 {
 	int i,j,k;
 
-	#pragma omp parallel for default(none) shared(A, B) private(i, j, k)
+	#pragma omp parallel for collapse(2) default(none) shared(A, B) private(i, j, k)
 	for(i=2; i<=N-3; i++)
 	for(j=2; j<=N-3; j++)
 	for(k=2; k<=N-3; k++)
@@ -97,7 +97,7 @@ void resid(double A [N][N][N], double B [N][N][N])
 {
 	int i,j,k;
 
-	#pragma omp parallel for default(none) shared(A, B) private(i, j, k) reduction(max: eps)
+	#pragma omp parallel for collapse(2) default(none) shared(A, B) private(i, j, k) reduction(max: eps)
 	for(i=1; i<=N-2; i++)
 	for(j=1; j<=N-2; j++)
 	for(k=1; k<=N-2; k++)
@@ -115,7 +115,7 @@ void verify(double A [N][N][N])
 
 	double s;
 	s=0.;
-	#pragma omp parallel for default(none) shared(A) private(i, j, k) reduction(+:s) 
+	#pragma omp parallel for collapse(2) default(none) shared(A) private(i, j, k) reduction(+:s) 
 	for(i=0; i<=N-1; i++)
 	for(j=0; j<=N-1; j++)
 	for(k=0; k<=N-1; k++)
