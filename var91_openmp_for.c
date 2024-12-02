@@ -5,6 +5,7 @@
 #include <omp.h>
 
 #define  Max(a,b) ((a)>(b)?(a):(b))
+#define  Min(a,b) ((a)>(b)?(b):(a))
 
 //#define  N   (2*2*2*2*2*2+2)       // 66
 //#define  N   (2*2*2*2*2*2*2+2)     // 130
@@ -24,9 +25,12 @@ int main(int an, char **as)
 {
 	int it;
 
+	// all the threads we will use
 	int threads[18] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 40, 60, 80, 100, 120, 140, 160};
+	
+	// time for every number of threads
 	double threads_time[18];
-	for (int tmp = 0; tmp < 5; ++tmp) threads_time[tmp] = 0;
+	
 	int threads_iter;
     double timer_start, timer_end;
 
@@ -36,7 +40,9 @@ int main(int an, char **as)
 	{
 		omp_set_num_threads(threads[threads_iter]);
 
-		for (int median = 0; median < 5; ++median) {
+		int min_iter;
+
+		for (int min_iter = 0; min_iter < 5; ++min_iter) {
 
 			double timer_start = omp_get_wtime();
 
@@ -56,12 +62,10 @@ int main(int an, char **as)
 			double timer_end = omp_get_wtime();
 			double time_spent = timer_end - timer_start;
 
-			threads_time[threads_iter] += time_spent;
+			threads_time[threads_iter] = Min(threads_time[threads_iter], time_spent);
 		}
 		
 	}
-
-	for (int tmp = 0; tmp < 5; ++tmp) threads_time[tmp] /= 5;
 
 	for (threads_iter=0; threads_iter<18; threads_iter++) 
 	{
