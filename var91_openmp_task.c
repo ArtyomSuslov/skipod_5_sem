@@ -105,20 +105,15 @@ void resid(double A [N][N][N], double B [N][N][N])
 {
 	int i,j,k;
 
-	int TS = (N - 4) / omp_get_max_threads();
-
-	#pragma omp taskloop grainsize(TS)
+	#pragma omp parallel for default(none) shared(A, B) private(i, j, k) reduction(max: eps)
 	for(i=1; i<=N-2; i++)
 	for(j=1; j<=N-2; j++)
 	for(k=1; k<=N-2; k++)
 	{
 		double e;
 		e = fabs(A[i][j][k] - B[i][j][k]);         
-		A[i][j][k] = B[i][j][k];
-		if (e > eps) {
-			#pragma omp atomic
-			eps = e;
-		}
+		A[i][j][k] = B[i][j][k]; 
+		eps = Max(eps,e);
 	}
 }
 
