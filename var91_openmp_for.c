@@ -42,7 +42,7 @@ int main(int an, char **as)
 
 		int min_iter;
 
-		for (int min_iter = 0; min_iter < 5; ++min_iter) {
+		for (min_iter = 0; min_iter < 5; ++min_iter) {
 
 			double timer_start = omp_get_wtime();
 
@@ -62,7 +62,7 @@ int main(int an, char **as)
 			double timer_end = omp_get_wtime();
 			double time_spent = timer_end - timer_start;
 
-			threads_time[threads_iter] = Min(threads_time[threads_iter], time_spent);
+			threads_time[threads_iter] = (threads_time[threads_iter] == 0) ? time_spent : Min(threads_time[threads_iter], time_spent);
 		}
 		
 	}
