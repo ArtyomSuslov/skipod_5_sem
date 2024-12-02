@@ -8,8 +8,8 @@
 #define  Min(a,b) ((a)>(b)?(b):(a))
 
 //#define  N   (2*2*2*2*2*2+2)       // 66
-//#define  N   (2*2*2*2*2*2*2+2)     // 130
-#define  N   (2*2*2*2*2*2*2*2+2)   // 258
+#define  N   (2*2*2*2*2*2*2+2)     // 130
+//#define  N   (2*2*2*2*2*2*2*2+2)   // 258
 //#define  N   (2*2*2*2*2*2*2*2*2+2) // 514
 
 double   maxeps = 0.1e-7;
@@ -24,17 +24,17 @@ void verify();
 int main(int an, char **as)
 {
 	int it;
+	double A[N][N][N], B[N][N][N];
 
 	// all the threads we will use
 	int threads[18] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 40, 60, 80, 100, 120, 140, 160};
 	
-	// time for every number of threads
-	double threads_time[18];
-	
 	int threads_iter;
     double timer_start, timer_end;
 
-	double A[N][N][N], B[N][N][N];
+	// time for every number of threads
+	double threads_time[18];
+	for (threads_iter=0; threads_iter<18; ++threads_iter) threads_time[threads_iter] = 100000.;
 	
 	for (threads_iter=0; threads_iter<18; threads_iter++) 
 	{
@@ -62,7 +62,7 @@ int main(int an, char **as)
 			double timer_end = omp_get_wtime();
 			double time_spent = timer_end - timer_start;
 
-			threads_time[threads_iter] = (threads_time[threads_iter] == 0) ? time_spent : Min(threads_time[threads_iter], time_spent);
+			threads_time[threads_iter] = Min(threads_time[threads_iter], time_spent);
 		}
 		
 	}
