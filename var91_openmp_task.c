@@ -5,9 +5,10 @@
 #include <omp.h>
 
 #define  Max(a,b) ((a)>(b)?(a):(b))
+#define  Min(a,b) ((a)>(b)?(b):(a))
 
-//#define  N   (2*2*2*2*2*2+2)       // 66
-#define  N   (2*2*2*2*2*2*2+2)     // 130
+#define  N   (2*2*2*2*2*2+2)       // 66
+//#define  N   (2*2*2*2*2*2*2+2)     // 130
 //#define  N   (2*2*2*2*2*2*2*2+2)   // 258
 //#define  N   (2*2*2*2*2*2*2*2*2+2) // 514
 
@@ -23,35 +24,47 @@ void verify();
 int main(int an, char **as)
 {
 	int it;
+	double A[N][N][N], B[N][N][N];
 
+	// all the threads we will use
 	int threads[18] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 40, 60, 80, 100, 120, 140, 160};
-	double threads_time[18];
+	
 	int threads_iter;
     double timer_start, timer_end;
 
-	double A[N][N][N], B[N][N][N];
+	// time for every number of threads
+	double threads_time[18];
+	for (threads_iter=0; threads_iter<18; ++threads_iter) threads_time[threads_iter] = 100000.;
 	
 	for (threads_iter=0; threads_iter<18; threads_iter++) 
 	{
 		omp_set_num_threads(threads[threads_iter]);
 
-		double timer_start = omp_get_wtime();
+		int min_iter;
 
-		init(A);
-		for(it=1; it<=itmax; it++)
-		{
-			eps = 0.;
-			relax(A, B);
-			resid(A, B);
-			//printf( "it=%4i   eps=%f\n", it,eps);
-			if (eps < maxeps) break;
+		for (min_iter = 0; min_iter < 5; ++min_iter) {
+
+			double timer_start = omp_get_wtime();
+
+			init(A);
+	
+			for(it=1; it<=itmax; it++)
+			{
+				eps = 0.;
+				relax(A, B);
+				resid(A, B);
+				//printf( "it=%4i   eps=%f\n", it,eps);
+				if (eps < maxeps) break;
+			}
+
+			verify(A);
+
+			double timer_end = omp_get_wtime();
+			double time_spent = timer_end - timer_start;
+
+			threads_time[threads_iter] = Min(threads_time[threads_iter], time_spent);
 		}
-		verify(A);
-
-		double timer_end = omp_get_wtime();
-		double time_spent = timer_end - timer_start;
-
-		threads_time[threads_iter] = time_spent;
+		
 	}
 
 	for (threads_iter=0; threads_iter<18; threads_iter++) 
@@ -67,7 +80,6 @@ void init(double A [N][N][N])
 {
 	int i,j,k;
 
-	#pragma omp parallel for default(none) shared(A) private(i, j, k)
 	for(i=0; i<=N-1; i++)
 	for(j=0; j<=N-1; j++)
 	for(k=0; k<=N-1; k++)
@@ -81,11 +93,11 @@ void relax(double A [N][N][N], double B [N][N][N])
 {
 	int i,j,k;
 
-	int TS = (N - 4) / omp_get_max_threads();
-
-	#pragma omp taskloop grainsize(TS)
+	#pragma omp parallel default(none) shared(A, B) private(i, j)
+	#pragma omp master
 	for(i=2; i<=N-3; i++)
 	for(j=2; j<=N-3; j++)
+	#pragma omp task default(none) private(k) firstprivate(i, j) shared(A, B)
 	for(k=2; k<=N-3; k++)
 	{
 		B[i][j][k]=(A[i-1][j][k]+A[i+1][j][k]+A[i][j-1][k]+A[i][j+1][k]+A[i][j][k-1]+A[i][j][k+1]+
@@ -97,17 +109,30 @@ void relax(double A [N][N][N], double B [N][N][N])
 void resid(double A [N][N][N], double B [N][N][N])
 {
 	int i,j,k;
+	double *eps_threads = calloc(omp_get_max_threads(), sizeof(*eps_threads));
 
-	#pragma omp parallel for default(none) shared(A, B) private(i, j, k) reduction(max: eps)
+	#pragma omp parallel default(none) shared(A, B, eps_threads) private(i, j)
+	#pragma omp master
 	for(i=1; i<=N-2; i++)
 	for(j=1; j<=N-2; j++)
-	for(k=1; k<=N-2; k++)
+	#pragma omp task default(none) private(k) firstprivate(i, j) shared(A, B, eps_threads)
 	{
-		double e;
-		e = fabs(A[i][j][k] - B[i][j][k]);         
-		A[i][j][k] = B[i][j][k]; 
-		eps = Max(eps,e);
+		int thread_n = omp_get_thread_num();
+		
+		for(k=1; k<=N-2; k++)
+		{
+			double e = fabs(A[i][j][k] - B[i][j][k]);         
+			A[i][j][k] = B[i][j][k];
+			eps_threads[thread_n] = Max(eps_threads[thread_n], e); 
+		}
 	}
+	#pragma omp taskwait
+
+	for (i=0; i<omp_get_max_threads(); i++) {
+		eps = Max(eps, eps_threads[i]);
+	}
+
+	free(eps_threads);
 }
 
 void verify(double A [N][N][N])
@@ -116,16 +141,12 @@ void verify(double A [N][N][N])
 
 	double s;
 	s=0.;
-	
-	int TS = (N - 4) / omp_get_max_threads();
-
-	#pragma omp taskloop grainsize(TS)
+	#pragma omp parallel for collapse(2) default(none) shared(A) private(i, j, k) reduction(+:s) 
 	for(i=0; i<=N-1; i++)
 	for(j=0; j<=N-1; j++)
 	for(k=0; k<=N-1; k++)
 	{
-		#pragma omp atomic
 		s=s+A[i][j][k]*(i+1)*(j+1)*(k+1)/(N*N*N);
 	}
-	printf("  S = %f\n",s);
+	//printf("  S = %f\n",s);
 }
